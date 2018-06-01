@@ -29,10 +29,11 @@ char WLAN_PASS_1[50] = "benev0lence!2821";
 
 // Hotspot credentials
 //char WLAN_SSID_2[] = "srinidhi";
-//char WLAN_SSID_2[] = "vikas";
 //char WLAN_PASS_2[] = "12345678";
-char WLAN_SSID_2[] = "Judith";
-char WLAN_PASS_2[] = "jujujuju";
+//char WLAN_SSID_2[] = "Judith";
+//char WLAN_PASS_2[] = "jujujuju";
+char WLAN_SSID_2[] = "EinsteinWiz";
+char WLAN_PASS_2[] = "benev0lence!2821";
 
 // The TCP port to use
 #define PORT                 80
@@ -178,12 +179,9 @@ void registered_generator (const char* url, const char* query, httppage_request_
     httpserver.print(WLAN_SSID_1);
     httpserver.print("<br> Password: ");
     httpserver.print(WLAN_PASS_1);
-//    httpserver.print("<br> Click <a href=\"/wifilogin.html\">here</a> to register another one <br>");
-    httpserver.print("<br> Click <a href=\"/info.html\">here</a> for extra firmware details <br>");
     httpserver.print("</body></html>");
 
-//    connectAP(WLAN_PASS_1, pass_value);
-//    connectAP(WLAN_SSID_1, WLAN_PASS_1);
+
     Serial.print("before disc");
 //    Feather.disconnect();
     Serial.print("disconnected");
@@ -290,13 +288,15 @@ void loop()
 
       Serial.print("Starting HTTP Server ... ");
       httpserver.begin(PORT, MAX_CLIENTS);
+      if (Feather.config(3232246543, 3232246529, 4294967040)){
+        Serial.print("Static IP added.");
+      }
+      Serial.println(Feather.localIP());
+      Serial.println(Feather.gatewayIP());
+      Serial.println(Feather.subnetMask());
+
       Feather.printNetwork();
       Serial.println(" OK. Go to Local IP now.");
-
-//    connectAP(WLAN_SSID_1, WLAN_PASS_1);
-//    if(Feather.connected()){
-//      Serial.print("New wifi added.");
-//    } 
     
       delay(60000);
     }
