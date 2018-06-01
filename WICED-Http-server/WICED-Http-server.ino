@@ -12,28 +12,25 @@
   any redistribution
 *********************************************************************/
 
-/* This example uses the AdafruitHTTPServer class to create a simple
-   webserver
-*/
 
 #include <adafruit_feather.h>
 #include <adafruit_http_server.h>
 #include <strings.h>
 #include <string>
 
+
 // Wifi credentials
-//char* WLAN_SSID_1 = "EinsteinWiz111";
-//char* WLAN_PASS_1 = "benev0lence!2821";
 char WLAN_SSID_1[50] = "EinsteinWiz111";
 char WLAN_PASS_1[50] = "benev0lence!2821";
 
 // Hotspot credentials
 //char WLAN_SSID_2[] = "srinidhi";
 //char WLAN_PASS_2[] = "12345678";
-//char WLAN_SSID_2[] = "Judith";
-//char WLAN_PASS_2[] = "jujujuju";
-char WLAN_SSID_2[] = "EinsteinWiz";
-char WLAN_PASS_2[] = "benev0lence!2821";
+char WLAN_SSID_2[] = "Judith";
+char WLAN_PASS_2[] = "jujujuju";
+
+bool new_wifi_added = false;
+
 
 // The TCP port to use
 #define PORT                 80
@@ -63,6 +60,7 @@ HTTPPage pages[] =
 
 uint8_t pagecount = sizeof(pages) / sizeof(HTTPPage);
 
+
 // Declare HTTPServer with max number of pages
 AdafruitHTTPServer httpserver(pagecount);
 /**************************************************************************/
@@ -77,14 +75,12 @@ AdafruitHTTPServer httpserver(pagecount);
    @param http_request  This request's information
 */
 /**************************************************************************/
+
 void wifi_login_html_generator (const char* url, const char* query, httppage_request_t* http_request)
 {
   (void) url;
   (void) query;
   (void) http_request;
-
-//  Serial.print(http_request);
-//  httpserver.print(http_request);
 
   httpserver.print("<html><body>");
   httpserver.print("<h1>Wifi Registration Page</h1>");
@@ -106,7 +102,6 @@ void wifi_login_html_generator (const char* url, const char* query, httppage_req
   httpserver.print("</script>");
 
   httpserver.print("<form method=\"get\" action=\"/registered.html\">");
-  //  httpserver.print("<form onSubmit = \"event.preventDefault(); formToJson(this);\">");
   httpserver.print("<label class=\"label\">SSID:  </label>");
   httpserver.print("<input type = \"text\" name = \"ssid\"/>");
   httpserver.print("<br/>");
@@ -115,10 +110,9 @@ void wifi_login_html_generator (const char* url, const char* query, httppage_req
   httpserver.print("<br/>");
   httpserver.print("<input type=\"submit\" value=\"Submit\">");
   httpserver.print("</form>");
-
   httpserver.print("</body></html>");
-
 }
+
 
 void info_html_generator (const char* url, const char* query, httppage_request_t* http_request)
 {
@@ -148,6 +142,7 @@ void info_html_generator (const char* url, const char* query, httppage_request_t
   httpserver.print(visit_count);
 }
 
+
 void registered_generator (const char* url, const char* query, httppage_request_t* http_request)
 {
   (void) url;
@@ -166,10 +161,6 @@ void registered_generator (const char* url, const char* query, httppage_request_
     strcpy(WLAN_SSID_1, ssid_value);
     strcpy(WLAN_PASS_1, pass_value);
         
-//    char * test = pass_value;
-//    char tset[50];
-//    strcpy(tset, test);
-
     httpserver.print("<html><body>");
     httpserver.print("<h1>Wifi Registered!</h1>");
     httpserver.print("<br>");
@@ -181,20 +172,14 @@ void registered_generator (const char* url, const char* query, httppage_request_
     httpserver.print(WLAN_PASS_1);
     httpserver.print("</body></html>");
 
+    Serial.print("Please wait to connect to ");
+    Serial.print(WLAN_SSID_1);
+    Serial.println(" ...");
 
-    Serial.print("before disc");
-//    Feather.disconnect();
-    Serial.print("disconnected");
-    connectAP(WLAN_SSID_1, WLAN_PASS_1);
-    if(Feather.connected()){
-      Serial.print("New wifi added.");
-    } 
-
-//  else{
-//    httpserver.print("You did not register anything.");
-//    httpserver.print("<br> Click <a href=\"/wifilogin.html\">here</a> to go back. <br>");
-//  }
+    new_wifi_added = true;
 }
+
+
 /**************************************************************************/
 /*!
    @brief  HTTP Page 404 generator, HTTP Server will automatically response
@@ -233,11 +218,8 @@ void file_not_found_generator (const char* url, const char* query, httppage_requ
   httpserver.print("</body></html>");
 }
 
-/**************************************************************************/
-/*!
-    @brief  The setup function runs once when the board comes out of reset
-*/
-/**************************************************************************/
+
+
 void setup()
 {
   Serial.begin(115200);
@@ -253,99 +235,68 @@ void setup()
 
   // Print all software versions
   Feather.printVersions();
-
-
 }
 
-/**************************************************************************/
-/*!
-    @brief  The loop function runs over and over again
-*/
-/**************************************************************************/
+
 
 void loop()
 {
-  Serial.println("LOOP");
+  Serial.println("LOOOOOP");
   char ssid_array[50];
   strcpy(ssid_array, Feather.SSID());
   
   if(Feather.connected()){
+    
     if(strcmp(ssid_array, WLAN_SSID_1) == 0){
-
       Serial.println("SUCCESSFULLY REGISTERED WIFI");
       Feather.printNetwork();
       delay(60000);
-
     }
+    
     else if (strcmp(ssid_array, WLAN_SSID_2) == 0){
       
-      // Tell the HTTP client to auto print error codes and halt on errors
-      httpserver.err_actions(true, true);
-
-      // Configure HTTP Server Pages
-      Serial.println("Adding Pages to HTTP Server");
-      httpserver.addPages(pages, pagecount);
-
-      Serial.print("Starting HTTP Server ... ");
-      httpserver.begin(PORT, MAX_CLIENTS);
-      if (Feather.config(3232246543, 3232246529, 4294967040)){
-        Serial.print("Static IP added.");
+      if (! httpserver.started()){
+        // Tell the HTTP client to auto print error codes and halt on errors
+        httpserver.err_actions(true, true);
+  
+        // Configure HTTP Server Pages
+        Serial.println("Adding Pages to HTTP Server");
+        httpserver.addPages(pages, pagecount);
+  
+        Serial.print("Starting HTTP Server ... ");
+        httpserver.begin(PORT, MAX_CLIENTS);
+        Feather.printNetwork();
+        Serial.println(" OK. Go to Local IP now.");
       }
-      Serial.println(Feather.localIP());
-      Serial.println(Feather.gatewayIP());
-      Serial.println(Feather.subnetMask());
-
-      Feather.printNetwork();
-      Serial.println(" OK. Go to Local IP now.");
-    
-      delay(60000);
+      
+      else{
+        
+        if(new_wifi_added){
+          Serial.print("New wifi added: ");
+          Serial.println(WLAN_SSID_1);
+          httpserver.stop();
+          Feather.disconnect();
+          Serial.println(Feather.connected());
+          connectAP(WLAN_SSID_1, WLAN_PASS_1);
+          Feather.printNetwork();
+        }
+        
+        else{
+          Serial.println("Please go to the webpage to register new wifi.");
+        }
+        
+      }
+      
+      delay(10000);
     }
   }
+  
   else{
     Serial.println("No wifi credentials registered. Opening hotspot...");
     connectAP(WLAN_SSID_2, WLAN_PASS_2);
     delay(5000);
   }
-
-
-//  if ( connectAP(WLAN_SSID_1, WLAN_PASS_1) ) {
-//    // Connected: Print network info
-//    Feather.printNetwork();
-//    Serial.println("SUCCESSFULLY REGISTERED WIFI");
-//    Serial.print(Feather.connected());
-//    
-//    // Tell the HTTP client to auto print error codes and halt on errors
-//    httpserver.err_actions(true, true);
-//    // Configure HTTP Server Pages
-//    Serial.println("Adding Pages to HTTP Server");
-//    httpserver.addPages(pages, pagecount);
-//    Serial.print("Starting HTTP Server ... ");
-//    httpserver.begin(PORT, MAX_CLIENTS);
-//    Serial.println(" running. Go to Local IP now.");
-//
-//    delay(20000);
-//  }
-//  else {
-//    if ( connectAP(WLAN_SSID_2, WLAN_PASS_2) ) {
-//      Feather.printNetwork();
-//      // Tell the HTTP client to auto print error codes and halt on errors
-//      httpserver.err_actions(true, true);
-//
-//
-//      // Configure HTTP Server Pages
-//      Serial.println("Adding Pages to HTTP Server");
-//      httpserver.addPages(pages, pagecount);
-//
-//      Serial.print("Starting HTTP Server ... ");
-//      httpserver.begin(PORT, MAX_CLIENTS);
-//      Serial.println(" OK. Go to Local IP now.");
-//      delay(20000);
-//    }
-//    else {
-//      Serial.print("DOUBLE FAIL");
-//    }
-//
-//  }
+  
 }
 
 
@@ -359,6 +310,7 @@ bool connectAP(char* WLAN_SSID, char* WLAN_PASS)
   // Attempt to connect to an AP
   Serial.print("Please wait while connecting to: ");
   Serial.print(WLAN_SSID);
+      
     if ( Feather.connect(WLAN_SSID, WLAN_PASS) )
     {
       Serial.print("... Connected!");
@@ -370,6 +322,13 @@ bool connectAP(char* WLAN_SSID, char* WLAN_PASS)
     }
   
   Serial.println();
+
+//  if (Feather.config(3232246543, 3232246529, 4294967040)){
+//        Serial.print("Static IP added.");
+//  }
+//  Serial.println(Feather.localIP());
+//  Serial.println(Feather.gatewayIP());
+//  Serial.println(Feather.subnetMask());
 
   return Feather.connected();
 }
