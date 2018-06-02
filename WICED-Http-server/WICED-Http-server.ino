@@ -28,6 +28,11 @@ char WLAN_PASS_1[50] = "benev0lence!2821";
 //char WLAN_PASS_2[] = "12345678";
 char WLAN_SSID_2[] = "Judith";
 char WLAN_PASS_2[] = "jujujuju";
+//char WLAN_SSID_2[] = "EinsteinWiz";
+//char WLAN_PASS_2[] = "benev0lence!2821";
+
+// Static IP address
+const char staticIP[] = "10.1.1.200";
 
 bool new_wifi_added = false;
 
@@ -172,9 +177,6 @@ void registered_generator (const char* url, const char* query, httppage_request_
     httpserver.print(WLAN_PASS_1);
     httpserver.print("</body></html>");
 
-    Serial.print("Please wait to connect to ");
-    Serial.print(WLAN_SSID_1);
-    Serial.println(" ...");
 
     new_wifi_added = true;
 }
@@ -235,21 +237,32 @@ void setup()
 
   // Print all software versions
   Feather.printVersions();
-}
 
+  if (*staticIP != '\0') {
+    IPAddress ip(__swap32(ipStrToNum(staticIP)));
+    IPAddress gateway(ip[0], ip[1], ip[2], 1); // set gateway to ... 1
+    Serial.print(F("Setting gateway to: "));
+    Serial.println(gateway);
+    IPAddress subnet(255, 255, 255, 0);
+    Feather.config(ip, gateway, subnet);
+  }
+}
 
 
 void loop()
 {
-  Serial.println("LOOOOOP");
+  Serial.println("\n LOOOOOP");
   char ssid_array[50];
   strcpy(ssid_array, Feather.SSID());
   
   if(Feather.connected()){
+
+    Serial.println(Feather.localIP());
+    Serial.println(Feather.gatewayIP());
+    Serial.println(Feather.subnetMask());
     
     if(strcmp(ssid_array, WLAN_SSID_1) == 0){
       Serial.println("SUCCESSFULLY REGISTERED WIFI");
-      Feather.printNetwork();
       delay(60000);
     }
     
@@ -272,13 +285,19 @@ void loop()
       else{
         
         if(new_wifi_added){
-          Serial.print("New wifi added: ");
+          Serial.print("Attempting to add: ");
           Serial.println(WLAN_SSID_1);
           httpserver.stop();
           Feather.disconnect();
-          Serial.println(Feather.connected());
-          connectAP(WLAN_SSID_1, WLAN_PASS_1);
-          Feather.printNetwork();
+          
+          if(connectAP(WLAN_SSID_1, WLAN_PASS_1)){
+            Feather.printNetwork();
+          }
+
+          else{
+            Serial.println("Connection to new wifi failed. Restarting server... ");
+          }
+         
         }
         
         else{
@@ -309,7 +328,13 @@ bool connectAP(char* WLAN_SSID, char* WLAN_PASS)
 {
   // Attempt to connect to an AP
   Serial.print("Please wait while connecting to: ");
-  Serial.print(WLAN_SSID);
+  Serial.println(WLAN_SSID);
+
+//  if (Feather.config(3232246543, 3232246529, 4294967040)){
+//  if (Feather.config(167840450, 167840257, 4294967040)){
+////  if (Feather.config(1, 2, 3)){
+//        Serial.println("Static IP added.");
+//  }
       
     if ( Feather.connect(WLAN_SSID, WLAN_PASS) )
     {
@@ -322,13 +347,6 @@ bool connectAP(char* WLAN_SSID, char* WLAN_PASS)
     }
   
   Serial.println();
-
-//  if (Feather.config(3232246543, 3232246529, 4294967040)){
-//        Serial.print("Static IP added.");
-//  }
-//  Serial.println(Feather.localIP());
-//  Serial.println(Feather.gatewayIP());
-//  Serial.println(Feather.subnetMask());
 
   return Feather.connected();
 }
@@ -348,3 +366,43 @@ void disconnect_callback(void)
 
   httpserver.stop();
 }
+
+
+/**************************************************************************/
+/*!
+    Changing IP string (eg. "10.10.1.200") to uint32_t number
+*/
+/**************************************************************************/
+uint32_t ipStrToNum(const char* ipStr) {
+  const int SIZE_OF_NUMS = 4;
+  union {
+  uint8_t bytes[SIZE_OF_NUMS];  // IPv4 address
+  uint32_t dword;
+  } _address;
+  _address.dword = 0; // clear return
+
+  int i = 0;
+  uint8_t num = 0; // start with 0
+  while ((*ipStr) != '\0') {
+    // while not end of string
+    if ((*ipStr == '.') || (*ipStr == ',')) {
+      // store num and move on to next position
+      _address.bytes[i++] = num;
+      num = 0;
+      if (i>=SIZE_OF_NUMS) {
+        break; // filled array
+      }
+    } else {  
+      if (*ipStr != ' ') {      // skip blanks
+        num = (num << 3) + (num << 1); // *10 = *8+*2
+        num = num +  (*ipStr - '0');
+      }  
+    }  
+    ipStr++;
+  }  
+  if (i<SIZE_OF_NUMS) {
+    // store last num
+    _address.bytes[i++] = num;
+  }
+  return _address.dword; 
+}  
