@@ -20,19 +20,17 @@
 
 
 // Wifi credentials
-char WLAN_SSID_1[50] = "EinsteinWiz111";
-char WLAN_PASS_1[50] = "benev0lence!2821";
+char WLAN_SSID_1[50] = "placeholder";
+char WLAN_PASS_1[50] = "placeholder";
 
 // Hotspot credentials
-//char WLAN_SSID_2[] = "srinidhi";
-//char WLAN_PASS_2[] = "12345678";
-char WLAN_SSID_2[] = "Judith";
-char WLAN_PASS_2[] = "jujujuju";
-//char WLAN_SSID_2[] = "EinsteinWiz";
-//char WLAN_PASS_2[] = "benev0lence!2821";
+char WLAN_SSID_2[] = "srinidhi";
+char WLAN_PASS_2[] = "12345678";
+//char WLAN_SSID_2[] = "Judith";
+//char WLAN_PASS_2[] = "jujujuju";
 
 // Static IP address
-const char staticIP[] = "10.1.1.200";
+const char staticIP[] = "192.168.43.16";
 
 bool new_wifi_added = false;
 
@@ -177,7 +175,6 @@ void registered_generator (const char* url, const char* query, httppage_request_
     httpserver.print(WLAN_PASS_1);
     httpserver.print("</body></html>");
 
-
     new_wifi_added = true;
 }
 
@@ -216,7 +213,6 @@ void file_not_found_generator (const char* url, const char* query, httppage_requ
     httpserver.print("</li>");
   }
   httpserver.print("</ul>");
-
   httpserver.print("</body></html>");
 }
 
@@ -241,10 +237,10 @@ void setup()
   if (*staticIP != '\0') {
     IPAddress ip(__swap32(ipStrToNum(staticIP)));
     IPAddress gateway(ip[0], ip[1], ip[2], 1); // set gateway to ... 1
-    Serial.print(F("Setting gateway to: "));
-    Serial.println(gateway);
     IPAddress subnet(255, 255, 255, 0);
     Feather.config(ip, gateway, subnet);
+    Serial.println("IP address set to: ");
+    Serial.println(staticIP);
   }
 }
 
@@ -256,10 +252,6 @@ void loop()
   strcpy(ssid_array, Feather.SSID());
   
   if(Feather.connected()){
-
-    Serial.println(Feather.localIP());
-    Serial.println(Feather.gatewayIP());
-    Serial.println(Feather.subnetMask());
     
     if(strcmp(ssid_array, WLAN_SSID_1) == 0){
       Serial.println("SUCCESSFULLY REGISTERED WIFI");
@@ -329,12 +321,6 @@ bool connectAP(char* WLAN_SSID, char* WLAN_PASS)
   // Attempt to connect to an AP
   Serial.print("Please wait while connecting to: ");
   Serial.println(WLAN_SSID);
-
-//  if (Feather.config(3232246543, 3232246529, 4294967040)){
-//  if (Feather.config(167840450, 167840257, 4294967040)){
-////  if (Feather.config(1, 2, 3)){
-//        Serial.println("Static IP added.");
-//  }
       
     if ( Feather.connect(WLAN_SSID, WLAN_PASS) )
     {
