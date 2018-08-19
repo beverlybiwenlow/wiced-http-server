@@ -24,10 +24,8 @@ char WLAN_SSID_1[50] = "placeholder";
 char WLAN_PASS_1[50] = "placeholder";
 
 // Hotspot credentials
-char WLAN_SSID_2[] = "srinidhi";
-char WLAN_PASS_2[] = "12345678";
-//char WLAN_SSID_2[] = "Judith";
-//char WLAN_PASS_2[] = "jujujuju";
+char WLAN_SSID_2[] = "placeholder";
+char WLAN_PASS_2[] = "placeholder";
 
 // Static IP address
 const char staticIP[] = "192.168.43.16";
